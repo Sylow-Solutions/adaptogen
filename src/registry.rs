@@ -16,17 +16,34 @@ use crate::parser::ParseError;
 /// ```
 /// use std::sync::Arc;
 /// use adaptogen::registry::ParserRegistry;
-/// use adaptogen::parser::ModelResponseParser;
+/// use adaptogen::parser::{ModelResponseParser, ParseError};
+/// use adaptogen::normalized::ContentFrame;
+///
+/// // Create a simple parser for a Claude model
+/// struct ClaudeParser;
+/// impl ModelResponseParser for ClaudeParser {
+///     fn supported_models(&self) -> Vec<String> {
+///         vec!["claude".to_string()]
+///     }
+///     
+///     fn parse(&self, _raw_response: &str) -> Result<ContentFrame, ParseError> {
+///         // Just for example purposes
+///         Ok(ContentFrame {
+///             id: "msg_123".to_string(),
+///             model: "claude".to_string(),
+///             blocks: vec![]
+///         })
+///     }
+/// }
 ///
 /// // Create a new registry
 /// let mut registry = ParserRegistry::new();
 ///
-/// // Register parsers for different models
-/// registry.register_parser(Arc::new(MyClaudeParser));
-/// registry.register_parser(Arc::new(MyQwenParser));
+/// // Register the Claude parser
+/// registry.register_parser(Arc::new(ClaudeParser));
 ///
 /// // Parse a response
-/// let response = r#"{"id": "msg_123", "model": "claude", "content": [...]}"#;
+/// let response = r#"{"id": "msg_123", "model": "claude", "content": []}"#;
 /// let result = registry.parse(response);
 /// ```
 pub struct ParserRegistry {
