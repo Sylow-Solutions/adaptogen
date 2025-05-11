@@ -6,21 +6,65 @@ use crate::parser::ModelResponseParser;
 use crate::parser::ParseError;
 
 /// Registry of model parsers
+///
+/// The `ParserRegistry` maintains a collection of model parsers and provides
+/// functionality to parse LLM responses by selecting the appropriate parser
+/// based on the model identifier in the response.
+///
+/// # Examples
+///
+/// ```
+/// use std::sync::Arc;
+/// use adaptogen::registry::ParserRegistry;
+/// use adaptogen::parser::ModelResponseParser;
+///
+/// // Create a new registry
+/// let mut registry = ParserRegistry::new();
+///
+/// // Register parsers for different models
+/// registry.register_parser(Arc::new(MyClaudeParser));
+/// registry.register_parser(Arc::new(MyQwenParser));
+///
+/// // Parse a response
+/// let response = r#"{"id": "msg_123", "model": "claude", "content": [...]}"#;
+/// let result = registry.parse(response);
+/// ```
 pub struct ParserRegistry {
     parsers: Vec<Arc<dyn ModelResponseParser>>,
 }
 
 impl ParserRegistry {
+    /// Create a new empty registry
+    ///
+    /// Returns a `ParserRegistry` with no registered parsers.
     pub fn new() -> Self {
         Self {
             parsers: Vec::new(),
         }
     }
 
+    /// Register a new parser
+    ///
+    /// Adds a parser to the registry. When parsing responses, parsers are checked in
+    /// the order they were registered.
     pub fn register_parser(&mut self, parser: Arc<dyn ModelResponseParser>) {
         self.parsers.push(parser);
     }
 
+    /// Parse a raw LLM response
+    ///
+    /// Attempts to parse the given response string by:
+    /// 1. Extracting the model identifier from the response
+    /// 2. Finding a parser that supports the identified model
+    /// 3. Using that parser to parse the complete response
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError` if:
+    /// - The JSON is invalid
+    /// - The model field is missing
+    /// - No parser is registered for the identified model
+    /// - The selected parser fails to parse the response
     pub fn parse(&self, raw_response: &str) -> Result<ContentFrame, ParseError> {
         let model = Self::extract_model(raw_response)?;
 
@@ -33,9 +77,16 @@ impl ParserRegistry {
         Err(ParseError::UnsupportedModel(model))
     }
 
+    /// Extract the model identifier from a response
+    ///
+    /// Parses the response as JSON and extracts the "model" field.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `ParseError` if:
+    /// - The JSON is invalid
+    /// - The model field is missing
     fn extract_model(raw_response: &str) -> Result<String, ParseError> {
-        // TODO: This is certaintly not the most robust way to do extract the model
-        // name from the raw json string, but it works for now.
         let json: Value = serde_json::from_str(raw_response)?;
 
         if let Some(model) = json.get("model").and_then(|m| m.as_str()) {

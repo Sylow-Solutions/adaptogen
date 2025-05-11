@@ -11,6 +11,15 @@ readme = "README.md"
 keywords = ["llm", "parser", "ai"]
 categories = ["text-processing", "parsing"]
 
+# Configuration for docs.rs
+[package.metadata.docs.rs]
+# Enable all features when building docs
+all-features = true
+# Add rustdoc configuration flags
+rustdoc-args = ["--cfg", "docsrs"]
+# Run additional Rustdoc passes
+rustdoc-scrape-examples = true
+
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

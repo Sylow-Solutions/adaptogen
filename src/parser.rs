@@ -1,31 +1,76 @@
 use crate::normalized::ContentFrame;
 
-/// Trait for parsing LLM model responses into ContentBlocks
+/// Trait for parsing LLM model responses into ContentFrames
+///
+/// Implement this trait to create parsers for specific LLM providers.
+/// Each parser is responsible for converting the model-specific JSON format
+/// into the normalized ContentFrame structure.
+///
+/// # Examples
+///
+/// ```
+/// use adaptogen::normalized::{ContentBlock, ContentFrame};
+/// use adaptogen::parser::{ModelResponseParser, ParseError};
+/// use serde_json::Value;
+///
+/// struct MyModelParser;
+///
+/// impl ModelResponseParser for MyModelParser {
+///     fn supported_models(&self) -> Vec<String> {
+///         vec!["my-model".to_string()]
+///     }
+///
+///     fn parse(&self, raw_response: &str) -> Result<ContentFrame, ParseError> {
+///         // Implementation of parsing logic
+///         # Ok(ContentFrame { 
+///         #    id: "example".into(), 
+///         #    model: "my-model".into(), 
+///         #    blocks: vec![] 
+///         # })
+///     }
+/// }
+/// ```
 pub trait ModelResponseParser: Send + Sync {
     /// Returns the model identifier(s) this parser supports
+    ///
+    /// This method should return a list of model names that this parser can handle.
+    /// The parser registry uses this to determine which parser to use for a given model.
     fn supported_models(&self) -> Vec<String>;
-    /// Parse raw response data into ContentBlocks
+    
+    /// Parse raw response data into a ContentFrame
+    ///
+    /// This method is responsible for converting the raw JSON string from the LLM
+    /// into the normalized ContentFrame format.
     fn parse(&self, raw_response: &str) -> Result<ContentFrame, ParseError>;
-    /// inside of the top level parse function in parser registry we do a naive search
-    /// basically just loop through the vector to find the first parser that supports a specific
-    /// model. This is the function that gets called there.
+    
+    /// Determines if this parser can handle a specific model
+    ///
+    /// This method checks if the given model string matches any of the
+    /// supported models returned by `supported_models()`.
     fn can_handle(&self, model: &str) -> bool {
         self.supported_models().iter().any(|m| m == model)
     }
 }
 
 /// Error type for parsing failures
+///
+/// This enum represents the different types of errors that can occur
+/// during the parsing process.
 #[derive(Debug, thiserror::Error)]
 pub enum ParseError {
+    /// Error when the response JSON is invalid
     #[error("Invalid JSON: {0}")]
     InvalidJson(#[from] serde_json::Error),
 
+    /// Error when a required field is missing from the response
     #[error("Missing field: {0}")]
     MissingField(String),
 
+    /// Error when the model is not supported by any registered parser
     #[error("Unsupported model: {0}")]
     UnsupportedModel(String),
 
+    /// General parsing error with a custom message
     #[error("Parsing error: {0}")]
     Other(String),
 }
