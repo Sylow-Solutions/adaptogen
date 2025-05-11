@@ -2,8 +2,14 @@
 name = "adaptogen"
 version = "0.1.0"
 edition = "2021"
-description = "A library c4rate for parsing different language model API responses into a normalized format"
-licence = "MIT"
+authors = ["Gianni Crivello <gianni.crivello@gmail.com>"]
+description = "A library for normalizing outputs from different LLM providers"
+license = "MIT"
+repository = "https://github.com/sylow-solutions/adaptogen"
+documentation = "https://docs.rs/adaptogen"
+readme = "README.md"
+keywords = ["llm", "parser", "ai", "normalization", "json", "llm-parser"]
+categories = ["text-processing", "parsing"]
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
